@@ -1,0 +1,104 @@
+﻿@using VehicleRentalSystem.Models
+@using Microsoft.AspNetCore.Html
+@model List<OfficeModel>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage | Car Rental</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 800px; margin: 20px auto; padding: 20px; background-color: #fff; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); border-radius: 8px; }
+        .header { text-align: center; padding-bottom: 20px; }
+        .header h1 { margin: 0; }
+        .form-section, .office-list { margin-bottom: 20px; }
+        .form-group { margin-bottom: 10px; }
+        label, input, select, button { display: block; width: 100%; margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .office-list li { background-color: #f4f4f4; margin-bottom: 10px; padding: 10px; border-radius: 5px; }
+        #map { height: 400px; }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBw06tgMXD07XgymzUHugWwTFs2GOQydTQ"></script>
+</head>
+<body>
+
+<div class="container">
+    <header class="header">
+        <h1>Car Rental</h1>
+        <p>Find a car anytime, from anywhere.</p>
+    </header>
+
+    <section class="form-section">
+        <form action="/Vehicle/Index" method="post" id="locationForm">
+            @RenderOfficeSelector(Model)
+            <button type="button" onclick="getLocationAndSubmit()">Find Car</button>
+        </form>
+    </section>
+
+    <ul class="office-list">
+        @foreach (var office in Model)
+        {
+            <li>@RenderOfficeDetails(office)</li>
+        }
+    </ul>
+
+    <div id="map"></div>
+
+    <form action="/Account/Logout" method="post">
+        <button type="submit" class="logout-button">Log Out</button>
+    </form>
+</div>
+
+@functions {
+    private static HtmlString RenderOfficeSelector(IEnumerable<OfficeModel> offices)
+    {
+        var stringBuilder = new System.Text.StringBuilder();
+        stringBuilder.Append(@"<div class='form-group'><label for='pickupLocation'>Pick-up Office</label><select id='pickupLocation' name='pickupLocation'><option value=''>Select an office</option>");
+
+        foreach (var office in offices)
+        {
+            stringBuilder.AppendFormat("<option value='{0}'>{0}</option>", office.OfficeName);
+        }
+
+        stringBuilder.Append("</select></div>");
+        stringBuilder.Append(@"<div class='form-group'><label for='pickupDate'>Pick-up Date</label><input type='date' id='pickupDate' name='pickupDate'></div>");
+        stringBuilder.Append(@"<div class='form-group'><label for='dropoffDate'>Drop-off Date</label><input type='date' id='dropoffDate' name='dropoffDate'></div>");
+
+        return new HtmlString(stringBuilder.ToString());
+    }
+
+    private static HtmlString RenderOfficeDetails(OfficeModel office)
+    {
+        return new HtmlString($"<h5>{office.OfficeName}</h5><small>Within 20 km</small><p>{office.OfficeAddress}</p>");
+    }
+}
+
+<script>
+    function initMap() {
+        var map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 6,
+            center: { lat: -34.397, lng: 150.644 } // Adjust this center point as needed
+        });
+
+        @foreach (var office in Model)
+        {
+            @:addMarker({ lat: @office.Latitude, lng: @office.Longitude }, map, '@office.OfficeName');
+        }
+    }
+
+    function addMarker(location, map, title) {
+        new google.maps.Marker({
+            position: location,
+            map: map,
+            title: title
+        });
+    }
+
+    google.maps.event.addDomListener(window, 'load', initMap);
+</script>
+
+</body>
+</html>
